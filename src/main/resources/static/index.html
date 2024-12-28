@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation Output</title>
+    <style>
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ddd;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+<h1>Simulation Output</h1>
+<pre id="output"></pre>
+
+<script>
+    const outputElement = document.getElementById('output');
+    const ws = new WebSocket('ws://localhost:8080/ws/simulation');
+
+    ws.onmessage = (event) => {
+        try {
+            const json = JSON.parse(event.data);
+            outputElement.textContent += JSON.stringify(json, null, 2) + '\n';
+        } catch (error) {
+            console.error("Failed to parse WebSocket message:", event.data);
+        }
+    };
+
+    ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+    };
+
+    ws.onclose = () => {
+        console.log("WebSocket connection closed.");
+    };
+</script>
+</body>
+</html>
