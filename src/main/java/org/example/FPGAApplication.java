@@ -85,7 +85,7 @@ class FPGAController {
                             JSONObject outputJson = new JSONObject(line);
 
                             // 推送 JSON 数据到 WebSocket
-//                            SimulationWebSocketHandler.broadcast(outputJson.toString());
+                            SimulationWebSocketHandler.broadcast(outputJson.toString());
 
                             System.out.println("Simulator Output: " + outputJson.toString(4));
 

@@ -3,40 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulation Output</title>
+    <title>Simulation Interface</title>
     <style>
-        pre {
-            background: #f4f4f4;
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        form, .actions, .output-container {
+            width: 80%;
+            max-width: 600px;
+            margin: 20px 0;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        form label, input, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        input[type="file"], input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
             padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #status {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        pre {
+            background-color: #f9f9f9;
+            padding: 15px;
             border: 1px solid #ddd;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
             overflow: auto;
+            max-height: 400px;
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-<h1>Simulation Output</h1>
-<pre id="output"></pre>
+<h1>Simulation Interface</h1>
+<form id="uploadForm">
+    <h2>Upload Files for Simulation</h2>
+    <label for="verilogFile">Upload Verilog File:</label>
+    <input type="file" id="verilogFile" name="verilogFile" required>
+
+    <label for="bindFile">Upload Bind File (JSON):</label>
+    <input type="file" id="bindFile" name="bindFile" required>
+
+    <button type="submit">Start Simulation</button>
+</form>
+
+<div class="actions">
+    <h2>Simulation Controls</h2>
+    <button id="stopSimulation" class="hidden">Stop Simulation</button>
+    <label for="signalInput">Send Signal (Manual Input):</label>
+    <input type="text" id="signalInput" placeholder="Enter signal JSON">
+
+    <label for="signalFile">Send Signal (File Input):</label>
+    <input type="file" id="signalFile">
+
+    <button id="sendSignal" class="hidden">Send Signal</button>
+</div>
+
+<div class="output-container">
+    <h2>Simulation Output</h2>
+    <div id="status">Connecting to WebSocket...</div>
+    <pre id="output"></pre>
+</div>
 
 <script>
-    const outputElement = document.getElementById('output');
+    const uploadForm = document.getElementById('uploadForm');
+    const stopButton = document.getElementById('stopSimulation');
+    const sendSignalButton = document.getElementById('sendSignal');
+    const signalInput = document.getElementById('signalInput');
+    const signalFileInput = document.getElementById('signalFile');
+    const statusDiv = document.getElementById('status');
+    const outputDiv = document.getElementById('output');
+
+    let isSimulationRunning = false;
+    let pollInterval;
+
+    // WebSocket Initialization
     const ws = new WebSocket('ws://localhost:8080/ws/simulation');
+
+    ws.onopen = () => {
+        statusDiv.textContent = "WebSocket connection established.";
+    };
+
+    ws.onclose = () => {
+        statusDiv.textContent = "WebSocket connection closed.";
+    };
 
     ws.onmessage = (event) => {
         try {
             const json = JSON.parse(event.data);
-            outputElement.textContent += JSON.stringify(json, null, 2) + '\n';
+            const formattedJson = JSON.stringify(json, null, 2); // Format JSON
+            outputDiv.textContent = formattedJson; // Replace content instead of appending
         } catch (error) {
             console.error("Failed to parse WebSocket message:", event.data);
+            outputDiv.textContent = `Invalid message: ${event.data}`;
         }
     };
 
+
     ws.onerror = (error) => {
         console.error("WebSocket error:", error);
+        statusDiv.textContent = "WebSocket error. Check the console for details.";
     };
 
-    ws.onclose = () => {
-        console.log("WebSocket connection closed.");
-    };
+    // Handle File Upload and Start Simulation
+    uploadForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const verilogFile = document.getElementById('verilogFile').files[0];
+        const bindFile = document.getElementById('bindFile').files[0];
+
+        const formData = new FormData();
+        formData.append('verilogFile', verilogFile);
+        formData.append('bindFile', bindFile);
+
+        statusDiv.textContent = "Uploading files and starting simulation...";
+
+        try {
+            const response = await fetch('/fpga/simulate', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`Simulation start failed: ${response.statusText}`);
+            }
+
+            const result = await response.text();
+            statusDiv.textContent = "Simulation started successfully. Waiting for output...";
+            console.log("Simulation started:", result);
+
+            isSimulationRunning = true;
+            stopButton.style.display = "inline-block";
+            sendSignalButton.style.display = "inline-block";
+            startPolling();
+        } catch (error) {
+            statusDiv.textContent = "Error starting simulation: " + error.message;
+            statusDiv.className = "error";
+        }
+    });
+
+    // Handle Stop Simulation
+    stopButton.addEventListener('click', async () => {
+        try {
+            const response = await fetch('/fpga/stop', { method: 'POST' });
+            if (!response.ok) {
+                throw new Error("Failed to stop simulation");
+            }
+
+            isSimulationRunning = false;
+            clearInterval(pollInterval);
+            statusDiv.textContent = "Simulation stopped.";
+            stopButton.style.display = "none";
+            sendSignalButton.style.display = "none";
+        } catch (error) {
+            statusDiv.textContent = "Error stopping simulation: " + error.message;
+        }
+    });
+
+    // Handle Send Signal
+    sendSignalButton.addEventListener('click', async () => {
+        let signalData;
+
+        if (signalFileInput.files.length > 0) {
+            const file = signalFileInput.files[0];
+            signalData = await file.text();
+        } else {
+            signalData = signalInput.value;
+        }
+
+        try {
+            const response = await fetch('/fpga/signal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: signalData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to send signal data: ${response.statusText}`);
+            }
+
+            const result = await response.text();
+            statusDiv.textContent = "Signal data sent successfully.";
+            console.log("Signal sent:", result);
+        } catch (error) {
+            statusDiv.textContent = "Error sending signal: " + error.message;
+        }
+    });
+
+    // Start Polling for Signal.json
+    function startPolling() {
+        pollInterval = setInterval(async () => {
+            if (!isSimulationRunning) return;
+
+            try {
+                const response = await fetch('/fpga/signal');
+                if (response.ok) {
+                    const signalData = await response.json();
+                    outputDiv.textContent += JSON.stringify(signalData, null, 2) + '\n\n';
+                } else if (response.status === 404) {
+                    console.log("Waiting for signal.json...");
+                } else {
+                    throw new Error("Failed to fetch signal data");
+                }
+            } catch (error) {
+                console.error("Polling error:", error.message);
+            }
+        }, 1000); // Poll every second
+    }
 </script>
 </body>
 </html>

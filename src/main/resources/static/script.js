@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to start simulation: ${response.statusText}`);
+                throw new Error(Failed to start simulation: ${response.statusText});
             }
 
             const result = await response.text();
@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to send signal data: ${response.statusText}`);
+                throw new Error(Failed to send signal data: ${response.statusText});
             }
 
             const result = await response.text();
@@ -125,8 +125,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Update the output display
     function updateOutput(signalData) {
-        outputDiv.textContent = JSON.stringify(signalData, null, 4);
+        outputDiv.textContent = JSON.stringify(signalData, null, 4); // Replace old content
     }
+
 
     // Stop polling and simulation if needed
     window.addEventListener("beforeunload", () => {
