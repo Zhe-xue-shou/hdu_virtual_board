@@ -11,6 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.example.WorkspaceCleaner.deleteDirectory;
+
 @SpringBootApplication
 public class FPGAApplication {
     public static void main(String[] args) {
@@ -132,15 +134,26 @@ class FPGAController {
             simulationRunning.set(false); // 停止 signal.json 监听
             if (simInput != null) {
                 simInput.close(); // 发送 EOF
-                System.out.println("Close input stream!");
             }
             if (simulationProcess != null) {
                 simulationProcess.waitFor(); // 等待进程结束
             }
+
+            String workspaceName = "test";
+            deleteDirectory(new File(workspaceName));
+
             return "Simulation stopped.";
         } catch (Exception e) {
             e.printStackTrace();
             return "Error stopping simulation: " + e.getMessage();
         }
     }
+
+//    @PostMapping("/cleanup")
+//    public String cleanup() {
+//        try {
+//
+//        }
+//    }
 }
+
