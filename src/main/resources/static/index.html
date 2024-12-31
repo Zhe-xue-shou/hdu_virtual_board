@@ -117,6 +117,7 @@
     const statusDiv = document.getElementById('status');
     const outputDiv = document.getElementById('output');
 
+    let sessionId = null;
     let isSimulationRunning = false;
     let pollInterval;
 
@@ -134,6 +135,10 @@
     ws.onmessage = (event) => {
         try {
             const json = JSON.parse(event.data);
+            if (json.sessionId) {
+                sessionId = json.sessionId; // Save sessionId from WebSocket message
+                console.log("Session ID received:", sessionId);
+            }
             const formattedJson = JSON.stringify(json, null, 2); // Format JSON
             outputDiv.textContent = formattedJson; // Replace content instead of appending
         } catch (error) {
@@ -141,7 +146,6 @@
             outputDiv.textContent = `Invalid message: ${event.data}`;
         }
     };
-
 
     ws.onerror = (error) => {
         console.error("WebSocket error:", error);
@@ -152,12 +156,18 @@
     uploadForm.addEventListener('submit', async (event) => {
         event.preventDefault();
 
+        if (!sessionId) {
+            statusDiv.textContent = "Session ID not available. Please wait for WebSocket connection.";
+            return;
+        }
+
         const verilogFile = document.getElementById('verilogFile').files[0];
         const bindFile = document.getElementById('bindFile').files[0];
 
         const formData = new FormData();
         formData.append('verilogFile', verilogFile);
         formData.append('bindFile', bindFile);
+        formData.append('sessionId', sessionId); // Add sessionId to the form data
 
         statusDiv.textContent = "Uploading files and starting simulation...";
 
@@ -178,7 +188,6 @@
             isSimulationRunning = true;
             stopButton.style.display = "inline-block";
             sendSignalButton.style.display = "inline-block";
-            startPolling();
         } catch (error) {
             statusDiv.textContent = "Error starting simulation: " + error.message;
             statusDiv.className = "error";
@@ -188,7 +197,7 @@
     // Handle Stop Simulation
     stopButton.addEventListener('click', async () => {
         try {
-            const response = await fetch('/fpga/stop', { method: 'POST' });
+            const response = await fetch(`/fpga/stop?sessionId=${sessionId}`, { method: 'POST' });
             if (!response.ok) {
                 throw new Error("Failed to stop simulation");
             }
@@ -203,7 +212,7 @@
         }
     });
 
-    // Handle Send Signal
+    // handle signal
     sendSignalButton.addEventListener('click', async () => {
         let signalData;
 
@@ -214,11 +223,16 @@
             signalData = signalInput.value;
         }
 
+        if (!sessionId) {
+            statusDiv.textContent = "Session ID is required to send signal.";
+            return;
+        }
+
         try {
-            const response = await fetch('/fpga/signal', {
+            const response = await fetch(`/fpga/signal?sessionId=${sessionId}`, {  // Pass sessionId as query parameter
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: signalData,
+                body: signalData,  // Send signal data as body content
             });
 
             if (!response.ok) {
@@ -232,27 +246,6 @@
             statusDiv.textContent = "Error sending signal: " + error.message;
         }
     });
-
-    // Start Polling for Signal.json
-    function startPolling() {
-        pollInterval = setInterval(async () => {
-            if (!isSimulationRunning) return;
-
-            try {
-                const response = await fetch('/fpga/signal');
-                if (response.ok) {
-                    const signalData = await response.json();
-                    outputDiv.textContent += JSON.stringify(signalData, null, 2) + '\n\n';
-                } else if (response.status === 404) {
-                    console.log("Waiting for signal.json...");
-                } else {
-                    throw new Error("Failed to fetch signal data");
-                }
-            } catch (error) {
-                console.error("Polling error:", error.message);
-            }
-        }, 1000); // Poll every second
-    }
 </script>
 </body>
 </html>
