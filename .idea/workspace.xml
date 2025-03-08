@@ -5,13 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0aa83e1d-b668-4e03-b9ed-688bb419867a" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/FPGAController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/example/SimulationWorker.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/example/FPGAApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/FPGAApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/FPGAController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/FPGAController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/example/SimulationWebSocketHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/SimulationWebSocketHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/static/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/static/script.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/static/script.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,7 +59,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Spring Boot.FPGAApplication.executor": "Run",
-    "git-widget-placeholder": "test",
+    "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -72,7 +69,7 @@
     "project.structure.last.edited": "模块",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "MavenSettings",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
     "vue.rearranger.settings.migration": "true",
     "应用程序.Main.executor": "Run"
   }
@@ -130,6 +127,10 @@
       <workItem from="1735392585750" duration="793000" />
       <workItem from="1735393386378" duration="3077000" />
       <workItem from="1735484459607" duration="5031000" />
+      <workItem from="1736572021512" duration="3619000" />
+      <workItem from="1741151511079" duration="5246000" />
+      <workItem from="1741169775962" duration="1264000" />
+      <workItem from="1741350452266" duration="11288000" />
     </task>
     <servers />
   </component>

@@ -1,6 +1,7 @@
 package org.example;
 
 import org.json.JSONObject;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -40,6 +41,10 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
+        boolean f = FPGAController.stopSimulationHelper(session.getId());
+        if (f) {
+            System.out.println("successfully mannual release: " + session.getId());
+        }
         System.out.println("WebSocket connection closed: " + session.getId());
     }
 }

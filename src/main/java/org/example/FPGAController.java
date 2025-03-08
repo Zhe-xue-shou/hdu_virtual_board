@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequestMapping("/fpga")
 public class FPGAController {
 
-    private final ConcurrentHashMap<String, SimulationWorker> workers = new ConcurrentHashMap<>();
+    public final static ConcurrentHashMap<String, SimulationWorker> workers = new ConcurrentHashMap<>();
 
     @PostMapping("/simulate")
     public ResponseEntity<?> simulate(@RequestParam("verilogFile") MultipartFile verilogFile,
@@ -58,31 +58,42 @@ public class FPGAController {
     }
 
     @PostMapping("/signal")
-    public String sendSignal(@RequestParam("sessionId") String sessionId, @RequestBody String signalData) {
+    public ResponseEntity<?> sendSignal(@RequestParam("sessionId") String sessionId, @RequestBody String signalData) {
         SimulationWorker worker = workers.get(sessionId);
         if (worker == null) {
             System.out.println("Error: No simulation running for sessionId " + sessionId);
-            return "Error: No simulation running for sessionId " + sessionId;
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error: No simulation running for sessionId " + sessionId);
         }
 
         try {
             worker.sendSignal(signalData);
-            return "Signal data received.";
+            return ResponseEntity.ok("Signal data received.");
         } catch (IOException e) {
             e.printStackTrace();
-            return "Error sending signal: " + e.getMessage();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error sending signal: " + e.getMessage());
         }
     }
 
     @PostMapping("/stop")
-    public String stopSimulation(@RequestParam("sessionId") String sessionId) {
+    ResponseEntity<?> stopSimulation(@RequestParam("sessionId") String sessionId) {
+        boolean f = stopSimulationHelper(sessionId);
+        if (f) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error: No simulation running for sessionId " + sessionId);
+        } else
+            return ResponseEntity.ok("Simulation stopped and workspace cleaned up.");
+    }
+
+    public static boolean stopSimulationHelper(String sessionId) {
         SimulationWorker worker = workers.remove(sessionId);
         if (worker == null) {
-            System.out.println("Error: No simulation running for sessionId " + sessionId);
-            return "Error: No simulation running for sessionId " + sessionId;
+            System.err.println("Error: No simulation running for sessionId " + sessionId);
+            return false;
         }
 
         worker.stopSimulation();
-        return "Simulation stopped and workspace cleaned up.";
+        return true;
     }
 }
