@@ -197,7 +197,7 @@
     // Handle Stop Simulation
     stopButton.addEventListener('click', async () => {
         try {
-            const response = await fetch(`/fpga/stop?sessionId=${sessionId}`, { method: 'POST' });
+            const response = await fetch(`/fpga/stop?sessionId=${sessionId}`, {method: 'POST'});
             if (!response.ok) {
                 throw new Error("Failed to stop simulation");
             }
@@ -231,7 +231,7 @@
         try {
             const response = await fetch(`/fpga/signal?sessionId=${sessionId}`, {  // Pass sessionId as query parameter
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: signalData,  // Send signal data as body content
             });
 
