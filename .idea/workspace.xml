@@ -5,8 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0aa83e1d-b668-4e03-b9ed-688bb419867a" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/resources/application.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/script/create_workbench.py" beforeDir="false" afterPath="$PROJECT_DIR$/script/create_workbench.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/example/FPGAController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/FPGAController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/static/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/top/vsrc/top.v" beforeDir="false" afterPath="$PROJECT_DIR$/top/vsrc/top.v" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -128,7 +133,7 @@
       <workItem from="1736572021512" duration="3619000" />
       <workItem from="1741151511079" duration="5246000" />
       <workItem from="1741169775962" duration="1264000" />
-      <workItem from="1741350452266" duration="15038000" />
+      <workItem from="1741350452266" duration="20636000" />
     </task>
     <servers />
   </component>

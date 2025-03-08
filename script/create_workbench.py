@@ -8,9 +8,16 @@ def generate_main_cpp(bind_file, module_name, output_file):
     with open(bind_file, "r") as f:
         bind_data = json.load(f)
 
+    clk_flag = 0  # 默认关闭clk
+    clk_value_name = ""  # clk信号名
+
     # 动态生成 bind_all_pins 内容
     pin_bindings = []
     for signal, pins in bind_data.items():
+        if len(pins) == 1 and pins[0] == "CLK":
+            clk_value_name = signal
+            clk_flag = 1
+            continue
         pin_binding = f"""    pins_map[&top->{signal}] = {{\n        {', '.join(f'"{pin}"' for pin in pins)}\n    }};"""
         pin_bindings.append(pin_binding)
 
@@ -29,13 +36,14 @@ def generate_main_cpp(bind_file, module_name, output_file):
     main_cpp_content = f"""#include "V{module_name}.h"
 #include "verilated.h"
 #include <iostream>
-#include <string>
-#include <thread>
 #include <mutex>
 #include <atomic>
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include "../../header/fpga.hh"
+#define COUNT_TIME 5'000
+
+{"#define CLK_FLAG" if clk_flag else ""}
 
 using namespace std;
 
@@ -62,8 +70,19 @@ int main(int argc, char **argv) {{
     std::thread input_thread(listen_for_input);
 
     bind_all_pins();
+
+#ifdef  CLK_FLAG
+    int time = 0;
+#endif
     while (running && !Verilated::gotFinish()) {{
-        {{
+        {{        
+#ifdef CLK_FLAG
+            time++;
+            if (time == COUNT_TIME) {{
+                top->{clk_value_name} ^= 1;
+                time = 0;
+            }}
+#endif
             nlohmann::json output_json;
             std::lock_guard<std::mutex> lock(value_mutex);
 
@@ -82,7 +101,7 @@ int main(int argc, char **argv) {{
     input_thread.join();
 
     delete top;
-    
+    std::cout << "Simulation ended gracefully." << std::endl;
     return 0;
 }}
 """

@@ -1,0 +1,12 @@
+server:
+  port: 9999
+
+fpga:
+  workspace:
+    base: /tmp  # ?????
+
+spring:
+  web:
+    resources:
+      static-locations: classpath:/static/
+      add-mappings: true

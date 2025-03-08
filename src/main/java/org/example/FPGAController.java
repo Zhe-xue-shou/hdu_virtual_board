@@ -30,7 +30,7 @@ public class FPGAController {
         try {
             // Step 1: 创建工作区目录并保存上传的文件
             Files.createDirectories(Paths.get(tmpSpacePath));
-            String verilogPath = tmpSpacePath + "/test.v";
+            String verilogPath = tmpSpacePath + "/top.v";
             String bindPath = tmpSpacePath + "/bind.json";
 
             verilogFile.transferTo(Paths.get(verilogPath));

@@ -122,7 +122,7 @@
     let pollInterval;
 
     // WebSocket Initialization
-    const ws = new WebSocket('ws://localhost:8080/ws/simulation');
+    const ws = new WebSocket('ws://localhost:9999/ws/simulation');
 
     ws.onopen = () => {
         statusDiv.textContent = "WebSocket connection established.";
