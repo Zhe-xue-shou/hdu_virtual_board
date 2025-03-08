@@ -10,6 +10,9 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.example.SimulationWorker.stopSimulationHelper;
+import static org.example.SimulationWorker.workers;
+
 public class SimulationWebSocketHandler extends TextWebSocketHandler {
 
     private static final CopyOnWriteArrayList<WebSocketSession> sessions = new CopyOnWriteArrayList<>();
@@ -39,9 +42,51 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
     }
 
     @Override
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
+        String payload = message.getPayload();
+        JSONObject json = new JSONObject(payload);
+
+        String type = json.optString("type");
+        String sessionId = json.optString("sessionId");
+
+        if ("signal".equals(type)) {
+            String signalData = json.optString("data");
+            SimulationWorker worker = workers.get(sessionId);
+
+            if (worker == null) {
+                System.out.println("Error: No simulation running for sessionId " + sessionId);
+                sendErrorMessage(session, "No simulation running for sessionId " + sessionId);
+                return;
+            }
+
+            try {
+                sendAckMessage(session, "Signal received successfully.");
+                worker.sendSignal(signalData);
+            } catch (IOException e) {
+                e.printStackTrace();
+                sendErrorMessage(session, "Error sending signal: " + e.getMessage());
+            }
+        }
+    }
+
+    private void sendErrorMessage(WebSocketSession session, String errorMessage) throws IOException {
+        JSONObject errorResponse = new JSONObject()
+                .put("type", "error")
+                .put("message", errorMessage);
+        session.sendMessage(new TextMessage(errorResponse.toString()));
+    }
+
+    private void sendAckMessage(WebSocketSession session, String message) throws IOException {
+        JSONObject ackResponse = new JSONObject()
+                .put("type", "ack")
+                .put("message", message);
+        session.sendMessage(new TextMessage(ackResponse.toString()));
+    }
+
+    @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
-        boolean f = FPGAController.stopSimulationHelper(session.getId());
+        boolean f = stopSimulationHelper(session.getId());
         if (f) {
             System.out.println("successfully mannual release: " + session.getId());
         }

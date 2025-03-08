@@ -11,14 +11,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+//import java.util.concurrent.ConcurrentHashMap;
+
+import static org.example.SimulationWorker.stopSimulationHelper;
+import static org.example.SimulationWorker.workers;
 
 @RestController
 @RequestMapping("/fpga")
 public class FPGAController {
-
-    public final static ConcurrentHashMap<String, SimulationWorker> workers = new ConcurrentHashMap<>();
-
     @PostMapping("/simulate")
     public ResponseEntity<?> simulate(@RequestParam("verilogFile") MultipartFile verilogFile,
                                       @RequestParam("bindFile") MultipartFile bindFile,
@@ -57,43 +57,32 @@ public class FPGAController {
         }
     }
 
-    @PostMapping("/signal")
-    public ResponseEntity<?> sendSignal(@RequestParam("sessionId") String sessionId, @RequestBody String signalData) {
-        SimulationWorker worker = workers.get(sessionId);
-        if (worker == null) {
-            System.out.println("Error: No simulation running for sessionId " + sessionId);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Error: No simulation running for sessionId " + sessionId);
-        }
-
-        try {
-            worker.sendSignal(signalData);
-            return ResponseEntity.ok("Signal data received.");
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error sending signal: " + e.getMessage());
-        }
-    }
+//    @PostMapping("/signal")
+//    public ResponseEntity<?> sendSignal(@RequestParam("sessionId") String sessionId, @RequestBody String signalData) {
+//        SimulationWorker worker = workers.get(sessionId);
+//        if (worker == null) {
+//            System.out.println("Error: No simulation running for sessionId " + sessionId);
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                    .body("Error: No simulation running for sessionId " + sessionId);
+//        }
+//
+//        try {
+//            worker.sendSignal(signalData);
+//            return ResponseEntity.ok("Signal data received.");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body("Error sending signal: " + e.getMessage());
+//        }
+//    }
 
     @PostMapping("/stop")
     ResponseEntity<?> stopSimulation(@RequestParam("sessionId") String sessionId) {
         boolean f = stopSimulationHelper(sessionId);
-        if (f) {
+        if (!f) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Error: No simulation running for sessionId " + sessionId);
         } else
             return ResponseEntity.ok("Simulation stopped and workspace cleaned up.");
-    }
-
-    public static boolean stopSimulationHelper(String sessionId) {
-        SimulationWorker worker = workers.remove(sessionId);
-        if (worker == null) {
-            System.err.println("Error: No simulation running for sessionId " + sessionId);
-            return false;
-        }
-
-        worker.stopSimulation();
-        return true;
     }
 }

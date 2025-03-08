@@ -246,6 +246,32 @@
             statusDiv.textContent = "Error sending signal: " + error.message;
         }
     });
+
+    sendSignalButton.addEventListener("click", async () => {
+        if (!sessionId) {
+            statusDiv.textContent = "Session ID is required to send signal.";
+            return;
+        }
+
+        let signalData;
+        if (signalFileInput.files.length > 0) {
+            const file = signalFileInput.files[0];
+            signalData = await file.text();
+        } else {
+            signalData = signalInput.value;
+        }
+
+        const message = {
+            type: "signal",
+            sessionId: sessionId,
+            data: signalData
+        };
+
+        ws.send(JSON.stringify(message));  // 通过 WebSocket 发送信号数据
+        console.log("Signal sent:", message);
+    });
+
+
 </script>
 </body>
 </html>

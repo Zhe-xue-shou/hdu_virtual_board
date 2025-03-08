@@ -6,10 +6,13 @@ import org.springframework.web.socket.WebSocketSession;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class SimulationWorker {
+    public final static ConcurrentHashMap<String, SimulationWorker> workers = new ConcurrentHashMap<>();
+
     private final String workspaceName;
     private final ExecutorService executorService;
     private Process simulationProcess;
@@ -53,6 +56,8 @@ public class SimulationWorker {
     }
 
     public void sendSignal(String signalData) throws IOException {
+        System.out.println("received signal!");
+        System.out.println(signalData);
         if (simInput != null) {
             simInput.write(signalData + "\n");
             simInput.flush();
@@ -77,10 +82,14 @@ public class SimulationWorker {
             String line;
             while (running && (line = simOutput.readLine()) != null) {
                 try {
-                    JSONObject outputJson = new JSONObject(line);
+                    JSONObject signalJson = new JSONObject(line);
                     if (session != null && session.isOpen()) {
-                        System.out.println(outputJson.toString(4));
-                        session.sendMessage(new TextMessage(outputJson.toString(4)));
+                        JSONObject outputJson=new JSONObject()
+                                .put("type", "signal")
+                                .put("signal", signalJson);
+                        System.out.println(signalJson.toString(4));
+
+                        session.sendMessage(new TextMessage(signalJson.toString(4)));
                     }
                 } catch (Exception e) {
                     System.err.println("Failed to parse simulator output as JSON: " + line);
@@ -110,5 +119,16 @@ public class SimulationWorker {
             }
         }
         Files.delete(directory.toPath());
+    }
+
+    public static boolean stopSimulationHelper(String sessionId) {
+        SimulationWorker worker = workers.remove(sessionId);
+        if (worker == null) {
+            System.err.println("Error: No simulation running for sessionId " + sessionId);
+            return false;
+        }
+
+        worker.stopSimulation();
+        return true;
     }
 }
