@@ -22,15 +22,12 @@ $(shell mkdir -p $(BUILD_DIR))
 
 # Verilator 编译规则
 INCFLAGS = $(addprefix -I, $(INC_PATH))
-CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
+CXXFLAGS += $(INCFLAGS) -DTOP_NAME=""V$(TOPNAME)""
 
 # 生成二进制文件的规则
 $(BIN): $(VSRCS) $(CSRCS)
 	@rm -rf $(OBJ_DIR)
-	$(VERILATOR) $(VERILATOR_CFLAGS) \
-		--top-module $(TOPNAME) $^ \
-		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
-		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
+	$(VERILATOR) $(VERILATOR_CFLAGS) 		--top-module $(TOPNAME) $^ 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) 		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
 
 # 运行生成的二进制文件
 run: $(BIN)
@@ -41,3 +38,4 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 .PHONY: default all clean run
+

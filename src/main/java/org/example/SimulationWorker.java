@@ -21,13 +21,17 @@ public class SimulationWorker {
     private final WebSocketSession session;
     private volatile boolean running = true;
 
+    enum SimulationResponse {
+        Ok, FailedCreateWorkbench, FailedMakeWorkbench, ErrorWhileSimulation
+    }
+
     public SimulationWorker(String workspaceName, WebSocketSession session) {
         this.workspaceName = workspaceName;
         this.session = session;
         this.executorService = Executors.newSingleThreadExecutor();
     }
 
-    public void startSimulation(String verilogPath, String bindPath) throws Exception {
+    public SimulationResponse startSimulation(String verilogPath, String bindPath) throws Exception {
         // Step 1: 调用 Python 脚本创建工作区
         ProcessBuilder builder = new ProcessBuilder(
                 "python3", "./script/create_workbench.py",
@@ -40,10 +44,22 @@ public class SimulationWorker {
         logProcessOutput(createProcess);
         int exitCode = createProcess.waitFor();
         if (exitCode != 0) {
-            throw new RuntimeException("Failed to create workbench. Exit code: " + exitCode);
+//            throw new RuntimeException("Failed to create workbench. Exit code: " + exitCode);
+            return SimulationResponse.FailedCreateWorkbench;
         }
 
-        // Step 2: 启动仿真
+        // Step 2: 构建仿真环境
+        builder = new ProcessBuilder("make");
+        builder.directory(new File(workspaceName));
+        builder.redirectErrorStream(true);
+        Process makeProcess = builder.start();
+        logProcessOutput(makeProcess);
+        exitCode = makeProcess.waitFor();
+        if (exitCode != 0) {
+            return SimulationResponse.FailedMakeWorkbench;
+        }
+
+        // Step 3: 启动仿真环境
         builder = new ProcessBuilder("make", "run");
         builder.directory(new File(workspaceName));
         builder.redirectErrorStream(true);
@@ -53,6 +69,8 @@ public class SimulationWorker {
 
         // Step 3: 开启线程读取输出
         executorService.submit(this::readSimulationOutput);
+
+        return SimulationResponse.Ok;
     }
 
     public void sendSignal(String signalData) throws IOException {
@@ -84,7 +102,7 @@ public class SimulationWorker {
                 try {
                     JSONObject signalJson = new JSONObject(line);
                     if (session != null && session.isOpen()) {
-                        JSONObject outputJson=new JSONObject()
+                        JSONObject outputJson = new JSONObject()
                                 .put("type", "signal")
                                 .put("signal", signalJson);
                         System.out.println(signalJson.toString(4));

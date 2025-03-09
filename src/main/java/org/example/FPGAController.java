@@ -45,11 +45,25 @@ public class FPGAController {
 
             // Step 3: 创建并启动 SimulationWorker
             SimulationWorker worker = new SimulationWorker(workspaceName, session);
-            worker.startSimulation(verilogPath, bindPath);
-            workers.put(sessionId, worker);
+            SimulationWorker.SimulationResponse simulationResponse = worker.startSimulation(verilogPath, bindPath);
 
-            // 返回 workspaceId
-            return ResponseEntity.ok(new JSONObject().put("workspaceId", workspaceName).toString());
+            switch (simulationResponse) {
+                case Ok:
+                    workers.put(sessionId, worker);
+                    return ResponseEntity.ok("Simulation started successfully.");
+                case ErrorWhileSimulation:
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("Error occurred during simulation.");
+                case FailedMakeWorkbench:
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Failed to make workbench.");
+                case FailedCreateWorkbench:
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Failed to create workbench.");
+                default:
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("Unknown error occurred.");
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
