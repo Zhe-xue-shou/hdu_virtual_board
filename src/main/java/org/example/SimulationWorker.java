@@ -45,6 +45,8 @@ public class SimulationWorker {
         int exitCode = createProcess.waitFor();
         if (exitCode != 0) {
 //            throw new RuntimeException("Failed to create workbench. Exit code: " + exitCode);
+            System.err.println("Error creating simulation workspace, clear " + workspaceName);
+            deleteDirectory(new File(workspaceName));
             return SimulationResponse.FailedCreateWorkbench;
         }
 
@@ -56,6 +58,8 @@ public class SimulationWorker {
         logProcessOutput(makeProcess);
         exitCode = makeProcess.waitFor();
         if (exitCode != 0) {
+            System.err.println("Error making simulation environment, clear " + workspaceName);
+            deleteDirectory(new File(workspaceName));
             return SimulationResponse.FailedMakeWorkbench;
         }
 
@@ -67,7 +71,7 @@ public class SimulationWorker {
         simInput = new BufferedWriter(new OutputStreamWriter(simulationProcess.getOutputStream()));
         simOutput = new BufferedReader(new InputStreamReader(simulationProcess.getInputStream()));
 
-        // Step 3: 开启线程读取输出
+        // Step 4: 开启线程读取输出
         executorService.submit(this::readSimulationOutput);
 
         return SimulationResponse.Ok;
@@ -82,7 +86,7 @@ public class SimulationWorker {
         }
     }
 
-    public void stopSimulation() {
+    private void stopSimulation() {
         running = false;
         executorService.shutdownNow();
         if (simulationProcess != null) {
@@ -113,6 +117,13 @@ public class SimulationWorker {
                     System.err.println("Failed to parse simulator output as JSON: " + line);
                 }
             }
+            if (!running) {
+                if (session != null) {
+                    SimulationWebSocketHandler.sendErrorMessage(
+                            session, "Exception occurred while simulation"
+                    );
+                }
+            }
         } catch (IOException e) {
             System.err.println("Error reading simulator output: " + e.getMessage());
         }
@@ -139,10 +150,10 @@ public class SimulationWorker {
         Files.delete(directory.toPath());
     }
 
-    public static boolean stopSimulationHelper(String sessionId) {
+    public static boolean stopSimulationWorker(String sessionId) {
         SimulationWorker worker = workers.remove(sessionId);
         if (worker == null) {
-            System.err.println("Error: No simulation running for sessionId " + sessionId);
+//            System.err.println("Error: No simulation running for sessionId " + sessionId);
             return false;
         }
 

@@ -1,7 +1,6 @@
 package org.example;
 
 import org.json.JSONObject;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -10,7 +9,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.example.SimulationWorker.stopSimulationHelper;
+import static org.example.SimulationWorker.stopSimulationWorker;
 import static org.example.SimulationWorker.workers;
 
 public class SimulationWebSocketHandler extends TextWebSocketHandler {
@@ -24,6 +23,20 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
             }
         }
         return null;
+    }
+
+    public static void sendErrorMessage(WebSocketSession session, String errorMessage) throws IOException {
+        JSONObject errorResponse = new JSONObject()
+                .put("type", "error")
+                .put("message", errorMessage);
+        session.sendMessage(new TextMessage(errorResponse.toString()));
+    }
+
+    public static void sendAckMessage(WebSocketSession session, String message) throws IOException {
+        JSONObject ackResponse = new JSONObject()
+                .put("type", "ack")
+                .put("message", message);
+        session.sendMessage(new TextMessage(ackResponse.toString()));
     }
 
     @Override
@@ -69,26 +82,12 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    private void sendErrorMessage(WebSocketSession session, String errorMessage) throws IOException {
-        JSONObject errorResponse = new JSONObject()
-                .put("type", "error")
-                .put("message", errorMessage);
-        session.sendMessage(new TextMessage(errorResponse.toString()));
-    }
-
-    private void sendAckMessage(WebSocketSession session, String message) throws IOException {
-        JSONObject ackResponse = new JSONObject()
-                .put("type", "ack")
-                .put("message", message);
-        session.sendMessage(new TextMessage(ackResponse.toString()));
-    }
-
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
-        boolean f = stopSimulationHelper(session.getId());
+        boolean f = stopSimulationWorker(session.getId());
         if (f) {
-            System.out.println("successfully mannual release: " + session.getId());
+            System.out.println("successfully manual close simulation: " + session.getId());
         }
         System.out.println("WebSocket connection closed: " + session.getId());
     }

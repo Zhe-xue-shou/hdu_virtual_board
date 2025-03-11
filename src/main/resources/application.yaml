@@ -1,12 +1,13 @@
 server:
   port: 9999
+  address: 127.0.0.1
 
-fpga:
-  workspace:
-    base: /tmp  # ?????
-
-spring:
-  web:
-    resources:
-      static-locations: classpath:/static/
-      add-mappings: true
+#fpga:
+#  workspace:
+#    base: /tmp  # ?????
+#
+#spring:
+#  web:
+#    resources:
+#      static-locations: classpath:/static/
+#      add-mappings: true

@@ -7,22 +7,24 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.UUID;
 //import java.util.concurrent.ConcurrentHashMap;
 
-import static org.example.SimulationWorker.stopSimulationHelper;
+import static org.example.SimulationWorker.stopSimulationWorker;
 import static org.example.SimulationWorker.workers;
 
 @RestController
+@CrossOrigin(origins = "http://127.0.0.1:5173") // 允许前端访问
 @RequestMapping("/fpga")
 public class FPGAController {
     @PostMapping("/simulate")
+    @CrossOrigin(origins = "http://127.0.0.1:5173")
     public ResponseEntity<?> simulate(@RequestParam("verilogFile") MultipartFile verilogFile,
                                       @RequestParam("bindFile") MultipartFile bindFile,
-                                      @RequestParam("sessionId") String sessionId) {
+                                      @RequestParam("sessionId") String sessionId
+    ) {
         String taskId = UUID.randomUUID().toString();
         String workspaceName = "workspace-" + taskId;
         String tmpSpacePath = "tmp/" + workspaceName;
@@ -66,6 +68,7 @@ public class FPGAController {
             }
         } catch (Exception e) {
             e.printStackTrace();
+//            System.err.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new JSONObject().put("error", e.getMessage()).toString());
         }
@@ -92,11 +95,12 @@ public class FPGAController {
 
     @PostMapping("/stop")
     ResponseEntity<?> stopSimulation(@RequestParam("sessionId") String sessionId) {
-        boolean f = stopSimulationHelper(sessionId);
+        boolean f = stopSimulationWorker(sessionId);
         if (!f) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Error: No simulation running for sessionId " + sessionId);
-        } else
+        } else {
             return ResponseEntity.ok("Simulation stopped and workspace cleaned up.");
+        }
     }
 }
