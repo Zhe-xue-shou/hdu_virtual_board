@@ -11,27 +11,66 @@ def generate_main_cpp(bind_file, module_name, output_file):
     clk_flag = 0  # 默认关闭clk
     clk_value_name = ""  # clk信号名
 
-    # 动态生成 bind_all_pins 内容
-    pin_bindings = []
-    for signal, pins in bind_data.items():
-        if len(pins) == 1 and pins[0] == "CLK":
-            clk_value_name = signal
-            clk_flag = 1
-            continue
-        pin_binding = f"""    pins_map[&top->{signal}] = {{\n        {', '.join(f'"{pin}"' for pin in pins)}\n    }};"""
-        pin_bindings.append(pin_binding)
+    # 解析 inputRows 和 outputRows
+    # all_signals = bind_data.get("inputRows", []) + bind_data.get("outputRows", [])
+    # input_signals=bind_data.get("inputRows", [])
+    # output_signals=bind_data.get("outputRows",[])
 
-    # 动态生成 update_all_signals_from_json 和 update_all_signals_to_json 内容
+    pin_bindings = []
     update_from_json_calls = []
     update_to_json_calls = []
-    for signal in bind_data.keys():
+
+    # 对于输入信号 绑定 读取 更新
+    for input_entry in bind_data["inputRows"]:
+        input_signal = input_entry["signal"]
+        input_pins = input_entry["pins"]
+
+        pin_bindings.append(
+            # pin[1]=>pin即可改回原来版本
+            f"""    pins_map[&top->{input_signal}] = {{\n        {', '.join(f'"{pin[1]}"' for pin in input_pins)}\n    }};"""
+        )
         update_from_json_calls.append(
-            f"    update_signal_from_json(input_json, &top->{signal});"
+            f"    update_signal_from_json(input_json, &top->{input_signal});"
         )
         update_to_json_calls.append(
-            f"    output_signal_to_json(output_json, &top->{signal});"
+            f"    output_signal_to_json(output_json, &top->{input_signal});"
         )
 
+    # 对于输出信号 绑定 更新
+    for output_entry in bind_data["outputRows"]:
+        output_signal = output_entry["signal"]
+        output_pins = output_entry["pins"]
+
+        pin_bindings.append(
+            f"""    pins_map[&top->{output_signal}] = {{\n        {', '.join(f'"{pin[1]}"' for pin in output_pins)}\n    }};"""
+        )
+        update_to_json_calls.append(
+            f"    output_signal_to_json(output_json, &top->{output_signal});"
+        )
+
+        if bind_data.get("CLK") and bind_data["CLK"] != "":
+            clk_value_name = bind_data["CLK"]
+            clk_flag = 1
+            continue
+
+    # for entry in all_signals:
+    #     signal = entry["signal"]
+    #     pins = entry["pins"]
+
+    #     if len(pins) == 1 and pins[0] == "CLK":
+    #         clk_value_name = signal
+    #         clk_flag = 1
+    #         continue
+
+    #     pin_bindings.append(
+    #         f"""    pins_map[&top->{signal}] = {{\n        {', '.join(f'"{pin}"' for pin in pins)}\n    }};"""
+    #     )
+    #     update_from_json_calls.append(
+    #         f"    update_signal_from_json(input_json, &top->{signal});"
+    #     )
+    #     update_to_json_calls.append(
+    #         f"    output_signal_to_json(output_json, &top->{signal});"
+    #     )
     # 生成 main.cpp 的内容
     main_cpp_content = f"""#include "V{module_name}.h"
 #include "verilated.h"
