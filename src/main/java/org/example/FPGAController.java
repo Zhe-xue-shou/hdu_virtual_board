@@ -16,11 +16,13 @@ import static org.example.SimulationWorker.stopSimulationWorker;
 import static org.example.SimulationWorker.workers;
 
 @RestController
-@CrossOrigin(origins = "http://127.0.0.1:5173") // 允许前端访问
+//@CrossOrigin(origins = "http://127.0.0.1:5173") // 允许前端访问
 @RequestMapping("/fpga")
 public class FPGAController {
+    private SimulationWorker.SimulationResponse simulationResponse;
+
     @PostMapping("/simulate")
-    @CrossOrigin(origins = "http://127.0.0.1:5173")
+//    @CrossOrigin(origins = "http://127.0.0.1:5173")
     public ResponseEntity<?> simulate(@RequestParam("verilogFile") MultipartFile verilogFile,
                                       @RequestParam("bindFile") MultipartFile bindFile,
                                       @RequestParam("sessionId") String sessionId
@@ -40,6 +42,7 @@ public class FPGAController {
 
             // Step 2: 获取 WebSocketSession
             WebSocketSession session = SimulationWebSocketHandler.getSession(sessionId);
+            System.out.println("Received sessionId:" + sessionId);
             if (session == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Error: WebSocket session not found for sessionId: " + sessionId);
@@ -49,10 +52,15 @@ public class FPGAController {
             SimulationWorker worker = new SimulationWorker(workspaceName, session);
             SimulationWorker.SimulationResponse simulationResponse = worker.startSimulation(verilogPath, bindPath);
 
+            JSONObject response_msg = new JSONObject();
+
             switch (simulationResponse) {
                 case Ok:
+                    response_msg.put("msg", "Simulation started successful");
+                    response_msg.put("code", 0);
                     workers.put(sessionId, worker);
-                    return ResponseEntity.ok("Simulation started successfully.");
+                    return ResponseEntity.status(HttpStatus.OK).
+                            body(response_msg.toString());
                 case ErrorWhileSimulation:
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body("Error occurred during simulation.");
@@ -96,11 +104,15 @@ public class FPGAController {
     @PostMapping("/stop")
     ResponseEntity<?> stopSimulation(@RequestParam("sessionId") String sessionId) {
         boolean f = stopSimulationWorker(sessionId);
+        JSONObject response_msg = new JSONObject();
         if (!f) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Error: No simulation running for sessionId " + sessionId);
         } else {
-            return ResponseEntity.ok("Simulation stopped and workspace cleaned up.");
+            System.out.println("Simulation stopped successful by fetch url");
+            response_msg.put("msg", "Simulation stopped successful and workspace cleaned up.");
+            response_msg.put("code", 0);
+            return ResponseEntity.ok(response_msg.toString());
         }
     }
 }
