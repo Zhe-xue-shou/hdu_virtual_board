@@ -1,5 +1,6 @@
 package org.example;
 
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import static org.example.SimulationWorker.stopSimulationWorker;
 import static org.example.SimulationWorker.workers;
 
+@Slf4j
 @RestController
 //@CrossOrigin(origins = "http://127.0.0.1:5173") // 允许前端访问
 @RequestMapping("/fpga")
@@ -42,7 +44,8 @@ public class FPGAController {
 
             // Step 2: 获取 WebSocketSession
             WebSocketSession session = SimulationWebSocketHandler.getSession(sessionId);
-            System.out.println("Received sessionId:" + sessionId);
+            log.debug("Received sessionId:{}", sessionId);
+//            System.out.println("Received sessionId:" + sessionId);
             if (session == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("Error: WebSocket session not found for sessionId: " + sessionId);
@@ -52,30 +55,43 @@ public class FPGAController {
             SimulationWorker worker = new SimulationWorker(workspaceName, session);
             SimulationWorker.SimulationResponse simulationResponse = worker.startSimulation(verilogPath, bindPath);
 
-            JSONObject response_msg = new JSONObject();
+            JSONObject responseJson = new JSONObject();
 
             switch (simulationResponse) {
                 case Ok:
-                    response_msg.put("msg", "Simulation started successful");
-                    response_msg.put("code", 0);
+                    responseJson.put("msg", "Simulation started successful");
+                    responseJson.put("code", 0);
                     workers.put(sessionId, worker);
                     return ResponseEntity.status(HttpStatus.OK).
-                            body(response_msg.toString());
+                            body(responseJson.toString());
                 case ErrorWhileSimulation:
+                    responseJson.put("msg", "Error occurred during simulation.");
+                    responseJson.put("notes", "Please try again later");
+                    responseJson.put("code", 1);
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("Error occurred during simulation.");
+                            .body(responseJson.toString());
                 case FailedMakeWorkbench:
+                    responseJson.put("msg", "failed to make workbench.");
+                    responseJson.put("notes", "Please check your verilog file and bind_pins");
+                    responseJson.put("code", 1);
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body("Failed to make workbench.");
+                            .body(responseJson.toString());
                 case FailedCreateWorkbench:
+                    responseJson.put("msg", "failed to create workbench.");
+                    responseJson.put("notes", "please try again later");
+                    responseJson.put("code", 1);
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body("Failed to create workbench.");
+                            .body(responseJson.toString());
                 default:
+                    responseJson.put("msg", "unknown error occurred");
+                    responseJson.put("notes", "please report the error to the administrator");
+                    responseJson.put("code", 1);
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("Unknown error occurred.");
+                            .body(responseJson.toString());
             }
         } catch (Exception e) {
             e.printStackTrace();
+            log.error(e.getMessage());
 //            System.err.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new JSONObject().put("error", e.getMessage()).toString());
@@ -109,7 +125,8 @@ public class FPGAController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Error: No simulation running for sessionId " + sessionId);
         } else {
-            System.out.println("Simulation stopped successful by fetch url");
+            log.debug("Simulation stopped successful by fetch url");
+//            System.out.println("Simulation stopped successful by fetch url");
             response_msg.put("msg", "Simulation stopped successful and workspace cleaned up.");
             response_msg.put("code", 0);
             return ResponseEntity.ok(response_msg.toString());

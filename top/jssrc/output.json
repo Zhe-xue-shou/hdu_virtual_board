@@ -1,0 +1,9 @@
+{
+    "type": "signal",
+    "signal": {
+        "SW01": 0,
+        "SW00": 0,
+        "Timer": 0,
+        "L00": 0
+    }
+}

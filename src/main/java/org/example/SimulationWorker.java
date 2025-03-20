@@ -1,5 +1,6 @@
 package org.example;
 
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -10,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+@Slf4j
 public class SimulationWorker {
     public final static ConcurrentHashMap<String, SimulationWorker> workers = new ConcurrentHashMap<>();
 
@@ -45,7 +47,8 @@ public class SimulationWorker {
         int exitCode = createProcess.waitFor();
         if (exitCode != 0) {
 //            throw new RuntimeException("Failed to create workbench. Exit code: " + exitCode);
-            System.err.println("Error creating simulation workspace, clear " + workspaceName);
+//            System.err.println("Error creating simulation workspace, clear " + workspaceName);
+            log.warn("Error creating simulation workspace, clear \" {}", workspaceName);
             deleteDirectory(new File(workspaceName));
             return SimulationResponse.FailedCreateWorkbench;
         }
@@ -58,7 +61,8 @@ public class SimulationWorker {
         logProcessOutput(makeProcess);
         exitCode = makeProcess.waitFor();
         if (exitCode != 0) {
-            System.err.println("Error making simulation environment, clear " + workspaceName);
+//            System.err.println("Error making simulation environment, clear " + workspaceName);
+            log.warn("Error making workspace, clear \" {}", workspaceName);
             deleteDirectory(new File(workspaceName));
             return SimulationResponse.FailedMakeWorkbench;
         }
@@ -78,8 +82,11 @@ public class SimulationWorker {
     }
 
     public void sendSignal(String signalData) throws IOException {
-        System.out.println("received signal!");
-        System.out.println(signalData);
+//        System.out.println("received signal!");
+//        System.out.println(signalData);
+        log.debug("received signal!");
+        log.debug(signalData);
+
         if (simInput != null) {
             simInput.write(signalData + "\n");
             simInput.flush();
@@ -108,13 +115,15 @@ public class SimulationWorker {
                     if (session != null && session.isOpen()) {
                         JSONObject outputJson = new JSONObject()
                                 .put("type", "signal")
-                                .put("signal", signalJson);
-                        System.out.println(signalJson.toString(4));
+                                .put("data", signalJson);
+//                        System.out.println(signalJson.toString(4));
 
+                        log.debug(outputJson.toString());
                         session.sendMessage(new TextMessage(signalJson.toString(4)));
                     }
                 } catch (Exception e) {
-                    System.err.println("Failed to parse simulator output as JSON: " + line);
+//                    System.err.println("Failed to parse simulator output as JSON: " + line);
+                    log.warn("Failed to parse output: {}", line);
                 }
             }
             if (!running) {
@@ -125,7 +134,8 @@ public class SimulationWorker {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error reading simulator output: " + e.getMessage());
+//            System.err.println("Error reading simulator output: " + e.getMessage());
+            log.error("Error reading simulation output: {}", e.getMessage());
         }
     }
 
@@ -133,7 +143,8 @@ public class SimulationWorker {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+//                System.out.println(line);
+                log.debug(line);
             }
         }
     }
@@ -154,6 +165,7 @@ public class SimulationWorker {
         SimulationWorker worker = workers.remove(sessionId);
         if (worker == null) {
 //            System.err.println("Error: No simulation running for sessionId " + sessionId);
+
             return false;
         }
 

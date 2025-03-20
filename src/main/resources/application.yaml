@@ -11,3 +11,6 @@ server:
 #    resources:
 #      static-locations: classpath:/static/
 #      add-mappings: true
+logging:
+  level:
+    org.example: debug

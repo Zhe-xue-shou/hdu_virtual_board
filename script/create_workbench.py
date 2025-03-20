@@ -48,29 +48,11 @@ def generate_main_cpp(bind_file, module_name, output_file):
             f"    output_signal_to_json(output_json, &top->{output_signal});"
         )
 
-        if bind_data.get("CLK") and bind_data["CLK"] != "":
+    # 检验clk信号是否存在
+    if bind_data.get("CLK") and bind_data["CLK"] != "":
             clk_value_name = bind_data["CLK"]
             clk_flag = 1
-            continue
-
-    # for entry in all_signals:
-    #     signal = entry["signal"]
-    #     pins = entry["pins"]
-
-    #     if len(pins) == 1 and pins[0] == "CLK":
-    #         clk_value_name = signal
-    #         clk_flag = 1
-    #         continue
-
-    #     pin_bindings.append(
-    #         f"""    pins_map[&top->{signal}] = {{\n        {', '.join(f'"{pin}"' for pin in pins)}\n    }};"""
-    #     )
-    #     update_from_json_calls.append(
-    #         f"    update_signal_from_json(input_json, &top->{signal});"
-    #     )
-    #     update_to_json_calls.append(
-    #         f"    output_signal_to_json(output_json, &top->{signal});"
-    #     )
+    
     # 生成 main.cpp 的内容
     main_cpp_content = f"""#include "V{module_name}.h"
 #include "verilated.h"

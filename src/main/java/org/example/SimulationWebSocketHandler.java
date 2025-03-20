@@ -1,5 +1,6 @@
 package org.example;
 
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -12,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static org.example.SimulationWorker.stopSimulationWorker;
 import static org.example.SimulationWorker.workers;
 
+@Slf4j
 public class SimulationWebSocketHandler extends TextWebSocketHandler {
 
     private static final CopyOnWriteArrayList<WebSocketSession> sessions = new CopyOnWriteArrayList<>();
@@ -30,6 +32,7 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
                 .put("type", "error")
                 .put("message", errorMessage);
         session.sendMessage(new TextMessage(errorResponse.toString()));
+        log.debug(errorResponse.toString());
     }
 
     public static void sendAckMessage(WebSocketSession session, String message) throws IOException {
@@ -37,12 +40,14 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
                 .put("type", "ack")
                 .put("message", message);
         session.sendMessage(new TextMessage(ackResponse.toString()));
+        log.debug(ackResponse.toString());
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(session);
-        System.out.println("New WebSocket connection established: " + session.getId());
+        log.info("New ws connection established: {}", session.getId());
+//        System.out.println("New WebSocket connection established: " + session.getId());
 
         try {
             session.sendMessage(new TextMessage(new JSONObject()
@@ -67,7 +72,8 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
             SimulationWorker worker = workers.get(sessionId);
 
             if (worker == null) {
-                System.out.println("Error: No simulation running for sessionId " + sessionId);
+//                System.out.println("Error: No simulation running for sessionId " + sessionId);
+                log.error("No worker running for sessionId: {}", sessionId);
                 sendErrorMessage(session, "No simulation running for sessionId " + sessionId);
                 return;
             }
@@ -87,8 +93,10 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
         sessions.remove(session);
         boolean f = stopSimulationWorker(session.getId());
         if (f) {
-            System.out.println("successfully manual close simulation: " + session.getId());
+//            System.out.println("successfully manual close simulation: " + session.getId());
+            log.info("Manually stopping simulation worker for sessionId: {}", session.getId());
         }
-        System.out.println("WebSocket connection closed: " + session.getId());
+//        System.out.println("WebSocket connection closed: " + session.getId());
+        log.info("ws connection closed: {}", session.getId());
     }
 }
