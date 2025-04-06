@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.example.SimulationWorker.stopSimulationWorker;
-import static org.example.SimulationWorker.workers;
+import static org.example.SimulationWorker.Workers;
 
 @Slf4j
 public class SimulationWebSocketHandler extends TextWebSocketHandler {
@@ -69,7 +69,7 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
 
         if ("signal".equals(type)) {
             String signalData = json.optString("data");
-            SimulationWorker worker = workers.get(sessionId);
+            SimulationWorker worker = Workers.get(sessionId);
 
             if (worker == null) {
 //                System.out.println("Error: No simulation running for sessionId " + sessionId);
@@ -80,7 +80,7 @@ public class SimulationWebSocketHandler extends TextWebSocketHandler {
 
             try {
                 sendAckMessage(session, "Signal received successfully.");
-                worker.sendSignal(signalData);
+                worker.SendSignal(signalData);
             } catch (IOException e) {
                 e.printStackTrace();
                 sendErrorMessage(session, "Error sending signal: " + e.getMessage());

@@ -14,7 +14,7 @@ import java.util.UUID;
 //import java.util.concurrent.ConcurrentHashMap;
 
 import static org.example.SimulationWorker.stopSimulationWorker;
-import static org.example.SimulationWorker.workers;
+import static org.example.SimulationWorker.Workers;
 
 @Slf4j
 @RestController
@@ -53,7 +53,7 @@ public class FPGAController {
 
             // Step 3: 创建并启动 SimulationWorker
             SimulationWorker worker = new SimulationWorker(workspaceName, session);
-            SimulationWorker.SimulationResponse simulationResponse = worker.startSimulation(verilogPath, bindPath);
+            SimulationWorker.SimulationResponse simulationResponse = worker.StartSimulation(verilogPath, bindPath);
 
             JSONObject responseJson = new JSONObject();
 
@@ -61,7 +61,7 @@ public class FPGAController {
                 case Ok:
                     responseJson.put("msg", "Simulation started successful");
                     responseJson.put("code", 0);
-                    workers.put(sessionId, worker);
+                    Workers.put(sessionId, worker);
                     return ResponseEntity.status(HttpStatus.OK).
                             body(responseJson.toString());
                 case ErrorWhileSimulation:

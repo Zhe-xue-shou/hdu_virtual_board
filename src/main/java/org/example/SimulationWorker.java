@@ -6,14 +6,15 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static org.example.WorkspaceCleaner.deleteDirectory;
+
 @Slf4j
 public class SimulationWorker {
-    public final static ConcurrentHashMap<String, SimulationWorker> workers = new ConcurrentHashMap<>();
+    public final static ConcurrentHashMap<String, SimulationWorker> Workers = new ConcurrentHashMap<>();
 
     private final String workspaceName;
     private final ExecutorService executorService;
@@ -23,7 +24,7 @@ public class SimulationWorker {
     private final WebSocketSession session;
     private volatile boolean running = true;
 
-    enum SimulationResponse {
+    public enum SimulationResponse {
         Ok, FailedCreateWorkbench, FailedMakeWorkbench, ErrorWhileSimulation
     }
 
@@ -33,7 +34,7 @@ public class SimulationWorker {
         this.executorService = Executors.newSingleThreadExecutor();
     }
 
-    public SimulationResponse startSimulation(String verilogPath, String bindPath) throws Exception {
+    public SimulationResponse StartSimulation(String verilogPath, String bindPath) throws Exception {
         // Step 1: 调用 Python 脚本创建工作区
         ProcessBuilder builder = new ProcessBuilder(
                 "python3", "./script/create_workbench.py",
@@ -49,7 +50,7 @@ public class SimulationWorker {
 //            throw new RuntimeException("Failed to create workbench. Exit code: " + exitCode);
 //            System.err.println("Error creating simulation workspace, clear " + workspaceName);
             log.warn("Error creating simulation workspace, clear \" {}", workspaceName);
-            deleteDirectory(new File(workspaceName));
+            clearWorkSpace(new File(workspaceName));
             return SimulationResponse.FailedCreateWorkbench;
         }
 
@@ -63,7 +64,7 @@ public class SimulationWorker {
         if (exitCode != 0) {
 //            System.err.println("Error making simulation environment, clear " + workspaceName);
             log.warn("Error making workspace, clear \" {}", workspaceName);
-            deleteDirectory(new File(workspaceName));
+            clearWorkSpace(new File(workspaceName));
             return SimulationResponse.FailedMakeWorkbench;
         }
 
@@ -81,7 +82,7 @@ public class SimulationWorker {
         return SimulationResponse.Ok;
     }
 
-    public void sendSignal(String signalData) throws IOException {
+    public void SendSignal(String signalData) throws IOException {
 //        System.out.println("received signal!");
 //        System.out.println(signalData);
         log.debug("received signal!");
@@ -100,9 +101,10 @@ public class SimulationWorker {
             simulationProcess.destroy();
         }
         try {
-            deleteDirectory(new File(workspaceName));
+            clearWorkSpace(new File(workspaceName));
         } catch (IOException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
+            log.error(e.getMessage());
         }
     }
 
@@ -126,13 +128,13 @@ public class SimulationWorker {
                     log.warn("Failed to parse output: {}", line);
                 }
             }
-            if (!running) {
-                if (session != null) {
-                    SimulationWebSocketHandler.sendErrorMessage(
-                            session, "Exception occurred while simulation"
-                    );
-                }
-            }
+//            if (!running) {
+//                if (session != null) {
+//                    SimulationWebSocketHandler.sendErrorMessage(
+//                            session, "Exception occurred while simulation"
+//                    );
+//                }
+//            }
         } catch (IOException e) {
 //            System.err.println("Error reading simulator output: " + e.getMessage());
             log.error("Error reading simulation output: {}", e.getMessage());
@@ -149,20 +151,12 @@ public class SimulationWorker {
         }
     }
 
-    private void deleteDirectory(File directory) throws IOException {
-        if (directory.isDirectory()) {
-            File[] files = directory.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    deleteDirectory(file);
-                }
-            }
-        }
-        Files.delete(directory.toPath());
+    private void clearWorkSpace(File directory) throws IOException {
+        deleteDirectory(directory);
     }
 
     public static boolean stopSimulationWorker(String sessionId) {
-        SimulationWorker worker = workers.remove(sessionId);
+        SimulationWorker worker = Workers.remove(sessionId);
         if (worker == null) {
 //            System.err.println("Error: No simulation running for sessionId " + sessionId);
 

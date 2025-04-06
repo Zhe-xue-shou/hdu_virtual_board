@@ -6,12 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="0aa83e1d-b668-4e03-b9ed-688bb419867a" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/script/create_workbench.py" beforeDir="false" afterPath="$PROJECT_DIR$/script/create_workbench.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/example/FPGAController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/FPGAController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/example/SimulationWebSocketHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/SimulationWebSocketHandler.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/example/SimulationWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/SimulationWorker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/top/jssrc/output.json" beforeDir="false" afterPath="$PROJECT_DIR$/top/jssrc/output.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,9 +32,6 @@
         <option name="userSettingsFile" value="$USER_HOME$/.m2/settings.xml" />
       </MavenGeneralSettings>
     </option>
-  </component>
-  <component name="PerforceDirect.Settings">
-    <option name="CHARSET" value="无" />
   </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
@@ -147,7 +141,8 @@
       <workItem from="1741779010780" duration="4832000" />
       <workItem from="1742106260938" duration="9135000" />
       <workItem from="1742383679130" duration="5286000" />
-      <workItem from="1742469219663" duration="5728000" />
+      <workItem from="1742469219663" duration="7248000" />
+      <workItem from="1743939067189" duration="348000" />
     </task>
     <servers />
   </component>
